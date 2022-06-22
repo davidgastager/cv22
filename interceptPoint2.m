@@ -12,13 +12,13 @@ function [ipx, ipy] = interceptPoint2(vp, p, frame_dim)
     if (vp(1) - p(1) > 0) % check x: left point
         x = 0;
     else % point is right
-        x = frame_dim(1);
+        x = frame_dim(2);
     end
     
     if (vp(2) - p(2) > 0) % y: upper point
         y = 0;
     else % lower point
-        y = frame_dim(2);
+        y = frame_dim(1);
     end
 
     % find x intersect
