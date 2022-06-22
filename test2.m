@@ -11,10 +11,10 @@ function output = test2(im)
     %im = img(bv+1:end-bv, bh:end-bh, :);
 
     %% Define VP and Coordinates
-    vp = [760, 500]; %[500,350];% Vanishing Pont X, Y
+    vp = [770, 500]; %[500,350];% Vanishing Pont X, Y
     % window plane corner points (LL, LR, UL, UR)
-    xl = 360; %220;
-    xr = 900; %780
+    xl = 400; %220;
+    xr = 1000; %780
     yu = 190; %110
     yl = 670; % 550
     
@@ -24,9 +24,9 @@ function output = test2(im)
     p8_s = [xr, yu]; % [780,110];%
     %% Calculate Intercept Points
     % Calculate corner points of wall/floor/ceiling planes
-    [p3_s, p5_s] = interceptPoint2(vp, p1_s, frame_dim)
+    [p3_s, p5_s] = interceptPoint2(vp, p1_s, frame_dim);
     [p9_s, p11_s] = interceptPoint2(vp, p7_s, frame_dim);
-    [p4_s, p6_s] = interceptPoint2(vp, p2_s, frame_dim)
+    [p4_s, p6_s] = interceptPoint2(vp, p2_s, frame_dim);
     [p10_s, p12_s] = interceptPoint2(vp, p8_s, frame_dim);
 
     %% Add Padding
@@ -42,7 +42,7 @@ function output = test2(im)
     im = img_pad/255.0;
     figure, imshow(img_pad);
     
-    p1_s = [p1_s(1)+left_pad, p1_s(2)+ceil_pad];
+    p1_s = floor([p1_s(1)+left_pad, p1_s(2)+ceil_pad]);
     p2_s = [p2_s(1)+left_pad, p2_s(2)+ceil_pad];
     p3_s = [p3_s(1)+left_pad, p3_s(2)+ceil_pad];
     p4_s = [p4_s(1)+left_pad, p4_s(2)+ceil_pad];
@@ -114,8 +114,9 @@ function output = test2(im)
     plot(polyshape(left_s));
     plot(polyshape(right_s));
     plot(polyshape(ceil_s));
+    
     %% Calculate Depth Values for each Wall
-    f = 500;
+    f = 1000;
     % Depths
     floor_d = calcDepth(vp, p2_s, p4_s, f)
     %floor_d = calcDepth(vp, p1_s, p3_s, f)
@@ -135,8 +136,7 @@ function output = test2(im)
     p5_w = [0,0, left_d];
     p6_w = [B, 0, right_d];
     
-    H = ((p1_s(2)-p7_s(2)) + (p2_s(2)-p8_s(2)))/2
-    H = p1_s(2)-p7_s(2)
+    H = ((p1_s(2)-p7_s(2)) + (p2_s(2)-p8_s(2)))/2;
     
     p7_w = [0, H, 0];
     p8_w = [B,H,0];
@@ -159,22 +159,22 @@ function output = test2(im)
     
     % Left Texture
     %l_mat = [left_d,p1_s(2)- p7_s(2);1,p1_s(2)-p7_s(2);left_d,1;1,1;];
-    l_mat = floor([0, bg_dim(2);0,0; left_d,0;left_d, bg_dim(2)]); % Left image dimensions
+    l_mat = floor([0, bg_dim(1);0,0; left_d,0;left_d, bg_dim(1)]); % Left image dimensions
     left_tf = fitgeotrans(floor(left_s), l_mat, 'projective'); % generate Transform for left texture
     tex_left = imwarp(im, left_tf, 'OutputView', imref2d([bg_dim(1), ceil(left_d)])); % Dimensions are defined in imref2d
     
     % Ceiling Texture
-    c_mat = floor([0, ceil_d; 0,0; bg_dim(2), 0; bg_dim(2), ceil_d]);
+    c_mat = floor([1, ceil_d; 1,1; bg_dim(2), 1; bg_dim(2), ceil_d]);
     ceil_tf = fitgeotrans(floor(ceil_s), c_mat, 'projective');
-    tex_ceil = imwarp(im, ceil_tf, 'OutputView', imref2d([ceil(ceil_d), bg_dim(2)]));
+    tex_ceil = imwarp(im, ceil_tf, 'OutputView', imref2d([ceil_d, bg_dim(2)]));
     
     % Right texture
-    r_mat = floor([0, bg_dim(1);0,0; right_d, 0; right_d, bg_dim(1)]);
+    r_mat = floor([1, bg_dim(1); 1,1; right_d, 1; right_d, bg_dim(1)]);
     right_tf = fitgeotrans(floor(right_s), r_mat, 'projective');
     tex_right = imwarp(im, right_tf, 'OutputView', imref2d([bg_dim(1), ceil(right_d)]));
     
     % Floor Texture
-    f_mat = floor([0, floor_d; 0,0; bg_dim(2), 0; bg_dim(2), floor_d]);
+    f_mat = floor([1, floor_d; 1,1; bg_dim(2), 1; bg_dim(2), floor_d]);
     floor_tf = fitgeotrans(floor(floor_s), f_mat, 'projective');
     tex_floor = imwarp(im, floor_tf, 'OutputView', imref2d([ceil(floor_d), bg_dim(2)]));
 
@@ -198,8 +198,6 @@ function output = test2(im)
     image(m_ceil, tex_ceil);
     
     view(3)
-    
-
     
     
 end
