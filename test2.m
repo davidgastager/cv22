@@ -24,10 +24,10 @@ function output = test2(im)
     p8_s = [xr, yu]; % [780,110];%
     %% Calculate Intercept Points
     % Calculate corner points of wall/floor/ceiling planes
-    [p3_s, p5_s] = interceptPoint2(vp, p1_s, frame_dim);
-    [p9_s, p11_s] = interceptPoint2(vp, p7_s, frame_dim);
-    [p4_s, p6_s] = interceptPoint2(vp, p2_s, frame_dim);
-    [p10_s, p12_s] = interceptPoint2(vp, p8_s, frame_dim);
+    [p3_s, p5_s] = interceptPoint(vp, p1_s, frame_dim);
+    [p9_s, p11_s] = interceptPoint(vp, p7_s, frame_dim);
+    [p4_s, p6_s] = interceptPoint(vp, p2_s, frame_dim);
+    [p10_s, p12_s] = interceptPoint(vp, p8_s, frame_dim);
 
     %% Add Padding
     ceil_pad= floor(abs(min([p11_s(2), p12_s(2),0])))
@@ -117,15 +117,25 @@ function output = test2(im)
     
     %% Calculate Depth Values for each Wall
     f = 1000;
+    
+    %% Calculate different f values
+
+    f_l = vp(1) - p1_s(1)
+    f_r = p2_s(1)-vp(1)
+    f_f = p1_s(2) - vp(2)
+    f_c = vp(2) - p7_s(2)
+
+ 
     % Depths
-    floor_d = calcDepth(vp, p2_s, p4_s, f)
-    %floor_d = calcDepth(vp, p1_s, p3_s, f)
-    left_d = calcDepth(vp, p7_s, p11_s,f)
-    %left_d = calcDepth(vp, p1_s, p5_s,f)
-    right_d = calcDepth(vp, p8_s, p12_s, f)
-    %right_d = calcDepth(vp, p2_s, p6_s, f)
-    ceil_d = calcDepth(vp, p7_s, p9_s,f)
-    %ceil_d = calcDepth(vp, p8_s, p10_s,f)
+    %floor_d = calcDepth(vp, p2_s, p4_s, f_f);
+    floor_d = calcDepth(vp, p1_s, p3_s, f_f)
+    %left_d = calcDepth(vp, p7_s, p11_s,f_l);
+    left_d = calcDepth(vp, p1_s, p5_s,f_l)
+    %right_d = calcDepth(vp, p8_s, p12_s, f_r);
+    right_d = calcDepth(vp, p2_s, p6_s, f_r)
+    %ceil_d = calcDepth(vp, p7_s, p9_s,f_c);
+    ceil_d = calcDepth(vp, p8_s, p10_s,f_c)
+
     
     %% Calculate World Coordinates of points
     p1_w = [0, 0, 0];
@@ -151,6 +161,11 @@ function output = test2(im)
     right_w = [p2_w; p8_w; p12_w; p6_w];
     floor_w = [p3_w; p1_w; p2_w; p4_w];
     back_w = [p1_w; p7_w; p8_w; p2_w];
+    
+    figure;
+    xlabel('x'); ylabel('y'); zlabel('z');
+    axis on; hold on;
+    scatter3(points_w(:,1), points_w(:,2), points_w(:,3));
     
     
     %% Generate Wall textures
@@ -198,7 +213,7 @@ function output = test2(im)
     image(m_ceil, tex_ceil);
     
     view(3)
-    
+    scatter3(points_w(:,1), points_w(:,2), points_w(:,3));
     
 end
 
