@@ -127,7 +127,7 @@ function out = tip(img)
     points = points_comb;
     
      %% Pad
-     [points_pad, img_pad, dim_pad, paddings] = padPoints(points, img);
+     [points_pad, img_pad, dim_pad, paddings, alpha] = padPoints(points, img);
      
      hold off;
      close;
@@ -167,14 +167,17 @@ function out = tip(img)
     % Transform and create texture
     tex_l = imwarp(img_pad, tf_l, 'OutputView', imref2d([bg_dim(1), floor(depth)])); % Dimensions are defined in imref2d
     tex_l = flip(tex_l, 1);
-    figure, imshow(tex_l)
+    tex_l_alpha = imwarp(alpha, tf_l, 'OutputView', imref2d([bg_dim(1), floor(depth)]));
+    tex_l_alpha = flip(tex_l_alpha, 1);
     
     % Ceil Texture
     mat_c = floor([1,1; 1, depth; bg_dim(2), depth; bg_dim(2), 1;]);
     points_c = [points(7,1:2); points(9,1:2); points(10,1:2); points(8,1:2)];
     tf_c = fitgeotrans(floor(points_c), mat_c, 'projective'); % generate Transform for left texture
     tex_c = imwarp(img_pad, tf_c, 'OutputView', imref2d([floor(depth), bg_dim(2)])); % Dimensions are defined in imref2d
-    tex_c = flip(tex_c, 1);
+    tex_c = flip(tex_c, 1); 
+    tex_c_alpha = imwarp(alpha, tf_c, 'OutputView', imref2d([floor(depth), bg_dim(2)])); 
+    tex_c_alpha = flip(tex_c_alpha,1);
     
     % Right Texture
     mat_r = floor([1,1; 1, bg_dim(1); depth, bg_dim(1); depth, 1;]);
@@ -182,6 +185,8 @@ function out = tip(img)
     tf_r = fitgeotrans(floor(points_r), mat_r, 'projective'); % generate Transform for left texture
     tex_r = imwarp(img_pad, tf_r, 'OutputView', imref2d([bg_dim(1), floor(depth)])); % Dimensions are defined in imref2d
     tex_r = flip(tex_r, 1);
+    tex_r_alpha = imwarp(alpha, tf_r, 'OutputView', imref2d([bg_dim(1), floor(depth)])); % Dimensions are defined in imref2d
+    tex_r_alpha = flip(tex_r_alpha, 1);
 
     % Floor Texture
     mat_f = floor([1,1; 1, depth; bg_dim(2), depth; bg_dim(2), 1;]);
@@ -189,18 +194,12 @@ function out = tip(img)
     tf_f = fitgeotrans(floor(points_f), mat_f, 'projective'); % generate Transform for left texture
     tex_f = imwarp(img_pad, tf_f, 'OutputView', imref2d([floor(depth), bg_dim(2)])); % Dimensions are defined in imref2d
     tex_f = flip(tex_f, 1);
+    tex_f_alpha = imwarp(alpha, tf_f, 'OutputView', imref2d([floor(depth), bg_dim(2)])); % Dimensions are defined in imref2d
+    tex_f_alpha = flip(tex_f_alpha, 1);
 
-    tex_f_ext = 0;
-    if (d_f - depth > 0)
-        mat_f_ext = floor([1,1; 1, d_f - depth; bg_dim(2), d_f - depth; bg_dim(2), 1;]);
-        points_f_ext = [points(3,1:2); points(3,3:4); points(4,3:4); points(4,1:2)];
-        tf_f_ext = fitgeotrans(floor(points_f_ext), mat_f_ext, 'projective');
-        tex_f_ext = imwarp(img_pad, tf_f_ext, 'OutputView', imref2d([floor(d_f - depth), bg_dim(2)]));
-        tex_f_ext = flip(tex_f_ext);
-        %figure; imshow(tex_f); figure, imshow(tex_f_ext);
-    end
 
-    % Draw in 3D
+    
+    %% Draw in 3D
     f = figure;
     xlabel('x'); ylabel('y'); zlabel('z');
     axis on; hold on;
@@ -209,31 +208,36 @@ function out = tip(img)
     H = bg_dim(1);
     
     %BG
-    m_bg = hgtransform('Matrix', makehgtform('translate', [0,0,H], 'xrotate', -pi/2));
+    m_bg = hgtransform('Matrix', makehgtform('translate', [1,1,H], 'xrotate', -pi/2));
     image(m_bg, tex_bg);
     %Left
     m_left = hgtransform('Matrix', makehgtform('translate', [1, -depth, H], 'xrotate', -pi/2, 'yrotate', -pi/2));
-    image(m_left, tex_l);
+    im_l = image(m_left, tex_l);
+    im_l.AlphaData = tex_l_alpha;
     
     %Right
-    m_right = hgtransform('Matrix', makehgtform('translate', [B,0,H], 'xrotate', -pi/2, 'yrotate', pi/2));
-    image(m_right, tex_r);
+    m_right = hgtransform('Matrix', makehgtform('translate', [B,1,H], 'xrotate', -pi/2, 'yrotate', pi/2));
+    im_r = image(m_right, tex_r);
+    im_r.AlphaData = tex_r_alpha;
     
     %Floor
-    m_floor = hgtransform('Matrix', makehgtform('translate', [0,0,0], 'xrotate', pi, 'yrotate', 0));
-    image(m_floor, tex_f);
+    m_floor = hgtransform('Matrix', makehgtform('translate', [1,1,1], 'xrotate', pi, 'yrotate', 0));
+    im_f = image(m_floor, tex_f);
+    im_f.AlphaData = tex_f_alpha;
     
     %Ceiling
-    m_ceil = hgtransform('Matrix', makehgtform('translate', [0,-depth,H-1], 'xrotate', 0, 'yrotate', 0));
-    image(m_ceil, tex_c);
+    m_ceil = hgtransform('Matrix', makehgtform('translate', [1,-depth,H-1], 'xrotate', 0, 'yrotate', 0));
+    im_c = image(m_ceil, tex_c);
+    im_c.AlphaData = tex_c_alpha;
     
     max_val = max([B,H, d_l, d_c, d_r, d_f])
-    xlim([0,max_val]); ylim([-max_val, 0]); zlim([0, max_val]);
+    xlim([0,max_val]); ylim([-max_val, 1]); zlim([0, max_val]);
     
     view(3);
     tf = cameratoolbar(f);
     cameratoolbar('SetMode', 'dollyfb');
     camproj('perspective');
     camzoom(0.5);
+    axis off;
     
 end

@@ -1,4 +1,4 @@
-function [points_pad, img_pad, dim_pad, paddings] = padPoints(points, img)
+function [points_pad, img_pad, dim_pad, paddings, alpha] = padPoints(points, img)
     % Function to add Padding to the image and the points
     dim = size(img);
     
@@ -13,6 +13,9 @@ function [points_pad, img_pad, dim_pad, paddings] = padPoints(points, img)
     img_pad = zeros([dim(1)+ceil_pad+floor_pad, dim(2)+left_pad + right_pad,3]);
     img_pad(1+ceil_pad:end-floor_pad,1+left_pad:end-right_pad,:) = img;
     img_pad = img_pad/255.0;
+    
+    alpha = zeros([dim(1)+ceil_pad+floor_pad, dim(2)+left_pad + right_pad,1]);
+    alpha(1+ceil_pad:end-floor_pad,1+left_pad:end-right_pad) = 1.0;
     
     % Pad all points
     points_pad = zeros(size(points));
