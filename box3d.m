@@ -1,19 +1,19 @@
-clear;
-close all;
+function fig = box3d(img, vp, p7, p2)
 
-img=imread('images\building.png');
 %% corner points of the outer rectangle
 [outerheight,outerlength,~]=size(img);
 o1=[1,1]; o2=[outerlength,1];
 o3=[1,outerheight ];o4=[outerlength,outerheight];
 %% corner points of the inner rectangle
 
-%imshow(img); [x,y] = ginput(2); p7 = floor([x(1),y(1)]);p8 = floor([x(2), y(1)]);p1 = floor([x(1),y(2)]);p2 = floor([x(2),y(2)]);
-p7=[339,184]; p8=[957,184];
-p1=[339,668]; p2=[957,668];
+
+p8=[p2(1),p7(2)];
+p1=[p7(1),p2(2)];
+%p7=[339,184]; p8=[957,184];
+%p1=[339,668]; p2=[957,668];
+
 %% Vanishing point
-vp=[500,400]; %vp=[779,515];
-%[a,b] = ginput(1); vp = floor([a,b]);
+%vp=[779,515];
 
 %% function of the first spider mesh line l1; coordinates of p9 and p11
 k1=(p7(2)-vp(2))/(p7(1)-vp(1));
@@ -81,7 +81,7 @@ img_b=img(:,:,3);img_b(~inrightwall)=nan;
 img_rw(:,:,1)=img_r;
 img_rw(:,:,2)=img_g;
 img_rw(:,:,3)=img_b;
-imshow(img_rw)
+%imshow(img_rw)
 %% Floor cropping
 infloor=inpolygon(pixel_x,pixel_y,[p1(1),p2(1),p4(1),p3(1)],[p1(2),p2(2),p4(2),p3(2)]);
 infloor=reshape(infloor,[outerheight,outerlength]);
@@ -107,7 +107,7 @@ img_lw=img_lw(:,1:p7(1),:);
 tform_lw = fitgeotrans([p11;p7;p1;p5],[1 1;lw_length 1;lw_length lw_height;1 lw_height],'projective');
 lw_rect = imwarp(img_lw,tform_lw,'OutputView', imref2d(size(lw_rect)));
 lw_rect2 = imwarp(img,tform_lw,'OutputView', imref2d(size(lw_rect)));
-figure;imshow(lw_rect./2 + lw_rect2./2);figure;imshow(lw_rect - lw_rect2);
+%figure;imshow(lw_rect./2 + lw_rect2./2);figure;imshow(lw_rect - lw_rect2);
 p9_trans=[p9(1) p9(2) 1]*tform_lw.T;
 p9_trans=p9_trans/p9_trans(3);
 p9_trans=[p9_trans(1) p9_trans(2)];
@@ -242,8 +242,7 @@ p6_new=[p6(1),p6(2)-p1(2)];
 
 tform_f = fitgeotrans([p1_new;p2_new;p4_new;p3_new],[1 1;f_length 1;f_length f_height ;1 f_height],'projective');
 f_rect = imwarp(img_f,tform_f,'OutputView', imref2d(size(f_rect)));
-figure;
-imshow(f_rect)
+%figure;imshow(f_rect)
 p5_new_trans=[p5_new(1) p5_new(2) 1]*tform_f.T;
 p5_new_trans=p5_new_trans/p5_new_trans(3);
 p5_new_trans=[p5_new_trans(1) p5_new_trans(2)];
@@ -270,15 +269,14 @@ if (p5_new_trans(2)<1||p5_new_trans(2)>f_height)&&(p6_new_trans(2)>1&&p6_new_tra
    tform_f_pwl = fitgeotrans([1 1;f_length 1;p6_new_trans;f_length f_height ;1 f_height;1 p6_new_trans(2)],[1 1;f_length 1;f_length norm(p6-p2)/norm(p4-p2)*d_f;f_length f_height ;1 f_height;1 norm(p6-p2)/norm(p4-p2)*d_f],'pwl');
    f_rect = imwarp(f_rect,tform_f_pwl,'OutputView', imref2d(size(f_rect)));
 end
-figure;
-imshow(f_rect)
+%figure;imshow(f_rect)
 %% Inner rectangle image Cropping
 in_rect=img(p7(2):p1(2),p7(1):p8(1),:);
 
 
 %% 3D Box building
 
-figure;
+fig = figure;
 xlabel('x');
 ylabel('y');
 zlabel('z');
@@ -308,4 +306,8 @@ view(3)
 
 
 
+
+
+
+end
 

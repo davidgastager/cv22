@@ -15,11 +15,12 @@ function fig = tip_input(img)
     [vp1, vp2] = ginput(1);
     plot(vp1, vp2, 'Marker', 'X', 'MarkerSize', 20, 'LineWidth', 4, 'Color', [1,0,0]);
     
-    p7 = [x(1), y(1)];
-    p2 = [x(2), y(2)];
-    vp = [vp1, vp2];
+    p7 = floor([x(1), y(1)]);
+    p2 = floor([x(2), y(2)]);
+    vp = floor([vp1, vp2]);
     
-    fig = tip(img, vp, p7, p2);
+    fig = tip(img, vp, p7, p2); % David
+    fig2 = box3d(img, vp, p7, p2); % Yan, Shi
     
 end
 
