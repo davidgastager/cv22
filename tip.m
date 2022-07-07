@@ -1,23 +1,14 @@
-function fig = tip(img)
-    close all;
-    %% Inputs
-    dim = size(img);
-    imshow(img);
-    hold on;
-    [x,y] = ginput(2);
-    w = x(2)-x(1);
-    h = y(2)-y(1);
-    rectangle('Position', [x(1),y(1),w,h], 'EdgeColor', [1,0,0], 'LineWidth', 2);
-    [vp1, vp2] = ginput(1);
-    plot(vp1, vp2, 'Marker', 'X', 'MarkerSize', 20, 'LineWidth', 4, 'Color', [1,0,0]);
-    
+function fig = tip(img, vp, p7, p2)
+    addpath('Helper_Functions')
     %% Calculate Intercept Points
+    dim = size(img);
     points = zeros(13,2);
-    points(1,:) = [x(1), y(2)];
-    points(2,:) = [x(2), y(2)];
-    points(7,:) = [x(1), y(1)];
-    points(8,:) = [x(2), y(1)];
-    points(13,:) = [vp1, vp2];
+    
+    points(1,:) = [p7(1), p2(2)];
+    points(2,:) = p2;%[x(2), y(2)];
+    points(7,:) = p7;%[x(1), y(1)];
+    points(8,:) = [p2(1), p7(2)];
+    points(13,:) = [vp(1), vp(2)];
     [points(3,:), points(5,:)] = interceptPoint(points(13,:), points(1,:), dim);
     [points(9,:), points(11,:)] = interceptPoint(points(13,:), points(7,:), dim);
     [points(4,:), points(6,:)] = interceptPoint(points(13,:), points(2,:), dim);
@@ -32,8 +23,7 @@ function fig = tip(img)
     [a, i] = max([len_left, len_ceil, len_right, len_floor]);
     
     
-     %% Shorten inner square so length of proper overlap can be calculated
-    points_long = zeros([13,2]);
+     %% Extend points to all be on maximum depth rectangle parallel to BG
     points_long = points;
     
     switch i
@@ -43,7 +33,7 @@ function fig = tip(img)
             points_long(3,:) = points(5,:);
             
             % Calculate all other points
-            x_left = 1;
+            %x_left = 1;
             y_up = points(11,2);
             y_low = points(5,2);
             points_long(10,2) = y_up;
@@ -67,7 +57,7 @@ function fig = tip(img)
             
             x_left = points(9,1);
             x_right = points(10,1);
-            y_up = 1;
+            %y_up = 1;
             
             points_long(5,1) = x_left;
             points_long(3,1) = x_left;
@@ -89,7 +79,7 @@ function fig = tip(img)
             points_long(4,:) = points(6,:);
             
             % Calculate all other points
-            x_right = dim(2);
+            %x_right = dim(2);
             y_up = points(12,2);
             y_low = points(6,2);
             
@@ -109,7 +99,7 @@ function fig = tip(img)
             % Calculate new max coordinates
             x_left = points(3,1);
             x_right = points(4,1);
-            y_low = dim(1);
+            %y_low = dim(1);
             % Calculate y_up
             m = (points(7,2) - points(13,2))/(points(7,1)-points(13,1));
             b = points(7,2) - m*points(7,1);
@@ -125,10 +115,11 @@ function fig = tip(img)
     points_comb = zeros([13,4]);
     points_comb(:,1:2) = points_long;
     points_comb(:,3:4) = points_long;
-    points = points_comb;
+    %points = points_comb;
+    points = points_long;
     
      %% Pad
-     [points_pad, img_pad, dim_pad, paddings, alpha] = padPoints(points, img);
+     [points_pad, img_pad, dim_pad, alpha] = padPoints(points, img);
      
      hold off;
      close;
@@ -136,12 +127,8 @@ function fig = tip(img)
     
     points = points_pad(:,1:2);
     %% Calculate Depth of shortened walls
-    f = 400;
-    depth = calcDepth(points(13,:), points(1,:), points(3,:),f);
-    d_f = depth;
-    d_l = d_f * norm(points(5,1:2) - points(13,1:2))/norm(points(3,1:2)-points(13,1:2));
-    d_c = d_l * norm(points(9, 1:2) - points(13,1:2))/norm(points(11,1:2)-points(13,1:2));
-    d_r = d_c * norm(points(12, 1:2) - points(13,1:2))/norm(points(10,1:2)-points(13,1:2));
+    focal_length = 2000;
+    depth = calcDepth(points(13,:), points(1,:), points(3,:),focal_length);
    
     
     %% Get textures
@@ -264,7 +251,7 @@ function fig = tip(img)
     camproj('perspective');
     
     vp = [points(13,1) - points(1,1), points(2,2)-points(13,2)];
-    cam_pos = [vp(1), -depth-f, vp(2)];
+    cam_pos = [vp(1), -depth-focal_length, vp(2)];
     campos(cam_pos);
     camtarget([vp(1),vp(2),0]);
     camzoom(0.15);
@@ -272,17 +259,17 @@ function fig = tip(img)
     
     % Calculate offest angle to background plane midpoint
     midpoint = [bg_dim(2)/2, 0, bg_dim(1)/2];
-    len_vp = depth+f;
-    len_x_rot = norm([depth + f, cam_pos(3) - midpoint(3)]);
+    len_vp = depth+focal_length;
+    len_x_rot = norm([depth + focal_length, cam_pos(3) - midpoint(3)]);
     alpha = acos(len_vp/len_x_rot)/(2*pi)*360;
-    len_y_rot = norm([depth+f, cam_pos(1) - midpoint(1)]);
+    len_y_rot = norm([depth+focal_length, cam_pos(1) - midpoint(1)]);
     beta = acos(len_vp/len_y_rot)/(2*pi)*360;
     
     % Pan Camera to adjust vp offset to center
     campan(-beta, alpha);
     
     % Limit Plot
-    max_val = max([B,H, d_l, d_c, d_r, d_f]);
-    xlim([0,max_val]); ylim([-max_val, 1]); zlim([0, max_val]);
+    max_val = max([B,H, depth]);
+    %xlim([0,max_val]); ylim([-max_val, 1]); zlim([0, max_val]);
     
 end
