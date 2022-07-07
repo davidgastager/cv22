@@ -1,4 +1,22 @@
-function fig = tip(img, vp, p7, p2)
+function fig = tip(img, vp, p7, p2, varargin)
+
+    parser = inputParser;
+    parser.FunctionName = 'tip';
+
+    parser.addRequired('img');
+    parser.addRequired('vp', @isnumeric);
+    parser.addRequired('p7', @isnumeric);
+    parser.addRequired('p2', @isnumeric);
+    parser.addParameter('useAlpha', false);
+
+    parser.parse(img, vp, p7, p2, varargin{:});
+    
+    img = parser.Results.img;
+    vp = parser.Results.vp;
+    p7 = parser.Results.p7;
+    p2 = parser.Results.p2;
+    use_alpha = parser.Results.useAlpha;
+    
     addpath('Helper_Functions')
     %% Calculate Intercept Points
     dim = size(img);
@@ -226,22 +244,26 @@ function fig = tip(img, vp, p7, p2)
     %Left
     m_left = hgtransform('Matrix', makehgtform('translate', [1, 1, H-1], 'xrotate', pi/2, 'yrotate', pi/2, 'zrotate',pi));
     im_l = image(m_left, tex_l);
-    im_l.AlphaData = tex_l_alpha;
      
     %Right
     m_right = hgtransform('Matrix', makehgtform('translate', [B,1,H], 'xrotate', -pi/2, 'yrotate', pi/2));
     im_r = image(m_right, tex_r);
-    im_r.AlphaData = tex_r_alpha;
      
     %Floor
     m_floor = hgtransform('Matrix', makehgtform('translate', [1,1,1], 'xrotate', pi, 'yrotate', 0));
     im_f = image(m_floor, tex_f);
-    im_f.AlphaData = tex_f_alpha;
     
     %Ceiling
     m_ceil = hgtransform('Matrix', makehgtform('translate', [0,1,H-2], 'xrotate', pi, 'yrotate', 0, 'zrotate', 0));
     im_c = image(m_ceil, tex_c);
-    im_c.AlphaData = tex_c_alpha;
+    
+    % Set Alpha Data
+    if use_alpha
+        im_l.AlphaData = tex_l_alpha;
+        im_r.AlphaData = tex_r_alpha;
+        im_f.AlphaData = tex_f_alpha;
+        im_c.AlphaData = tex_c_alpha;
+    end
  
 
     %% Camera Setup
@@ -269,7 +291,7 @@ function fig = tip(img, vp, p7, p2)
     campan(-beta, alpha);
     
     % Limit Plot
-    max_val = max([B,H, depth]);
+    %max_val = max([B,H, depth]);
     %xlim([0,max_val]); ylim([-max_val, 1]); zlim([0, max_val]);
     
 end

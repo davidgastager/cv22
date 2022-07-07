@@ -2,6 +2,14 @@ function fig = tip_input(img)
 % This function just serves as a simple cli interface. For TIP use the TIP
 % function
     close all;
+    n_px = size(img,1) * size(img,2);
+    n_px_fhd = 1920*1080;
+    if n_px > n_px_fhd
+        ratio = sqrt(n_px_fhd / n_px)
+        img = imresize(img, ratio);
+        size(img), size(img,1)*size(img,2)
+    end
+    
     dim = size(img);
     imshow(img);
     
@@ -19,8 +27,12 @@ function fig = tip_input(img)
     p2 = floor([x(2), y(2)]);
     vp = floor([vp1, vp2]);
     
-    fig = tip(img, vp, p7, p2); % David
+    
+    % TIP FUNCTIONS
+    fig = tip(img, vp, p7, p2, 'useAlpha', true); % David
+    set(gcf, 'Name', 'TIP');
     fig2 = box3d(img, vp, p7, p2); % Yan, Shi
+    set(gcf, 'Name', 'Box3D');
     
 end
 
