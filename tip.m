@@ -1,4 +1,5 @@
-function out = tip(img)
+function fig = tip(img)
+    close all;
     %% Inputs
     dim = size(img);
     imshow(img);
@@ -23,12 +24,12 @@ function out = tip(img)
     [points(10,:), points(12,:)] = interceptPoint(points(13,:), points(8,:), dim);
     
     %% Find longest plane (relative to 1:1 img dimensions)
-    len_ceil = (points(10,1) - points(9,1))/dim(2)
-    len_floor = (points(4,1) - points(3,1))/dim(2)
-    len_left = (points(5,2) - points(11,2))/dim(1)
-    len_right = (points(6,2) - points(12,2))/dim(1)
+    len_ceil = (points(10,1) - points(9,1))/dim(2);
+    len_floor = (points(4,1) - points(3,1))/dim(2);
+    len_left = (points(5,2) - points(11,2))/dim(1);
+    len_right = (points(6,2) - points(12,2))/dim(1);
     
-    [a, i] = max([len_left, len_ceil, len_right, len_floor])
+    [a, i] = max([len_left, len_ceil, len_right, len_floor]);
     
     
      %% Shorten inner square so length of proper overlap can be calculated
@@ -131,7 +132,7 @@ function out = tip(img)
      
      hold off;
      close;
-     plotLines(points_pad, img_pad);
+     %plotLines(points_pad, img_pad);
     
     points = points_pad(:,1:2);
     %% Calculate Depth of shortened walls
@@ -141,12 +142,6 @@ function out = tip(img)
     d_l = d_f * norm(points(5,1:2) - points(13,1:2))/norm(points(3,1:2)-points(13,1:2));
     d_c = d_l * norm(points(9, 1:2) - points(13,1:2))/norm(points(11,1:2)-points(13,1:2));
     d_r = d_c * norm(points(12, 1:2) - points(13,1:2))/norm(points(10,1:2)-points(13,1:2));
-    
-    %% Interpolate max depths of walls
-    %d_l = depth * (points(1,1) - points(5,1))/(points(1,3) - points(5,3))
-    %d_r = depth * (points(6,1) - points(2,1))/(points(6,3) - points(2,3))
-    %d_c = depth * (points(7,2) - points(9,2))/(points(7,4) - points(9,4))
-    %d_f = depth * (points(3,2) - points(1,2))/(points(3,4) - points(1,4))
    
     
     %% Get textures
@@ -158,49 +153,77 @@ function out = tip(img)
     % Left Texture
     % Create points of new image to map to (ie height and width of the
     % image block)
-    mat_l = floor([1,1; 1, bg_dim(1); depth, bg_dim(1); depth, 1;]);
+    mat_l = floor([1,bg_dim(1); 1, 1; depth, 1; depth, bg_dim(1);]);
     % Choose polygon from which the block is going to be taken
     points_l = [points(5,1:2); points(11,1:2); points(7,1:2); points(1,1:2)];
-    % Generate Homographie Transform between the new image map and the
-    % polygon
+    % Generate Homographie Transform between the new image map and the polygon
     tf_l = fitgeotrans(floor(points_l), mat_l, 'projective'); % generate Transform for left texture
     % Transform and create texture
     tex_l = imwarp(img_pad, tf_l, 'OutputView', imref2d([bg_dim(1), floor(depth)])); % Dimensions are defined in imref2d
-    tex_l = flip(tex_l, 1);
     tex_l_alpha = imwarp(alpha, tf_l, 'OutputView', imref2d([bg_dim(1), floor(depth)]));
-    tex_l_alpha = flip(tex_l_alpha, 1);
+    
+    % Crop textures and alpha mats for less memory intensive drawing
+    % collapse columns by taking mean and then finding first zero element
+    %(all rows are 0 in the alpha mat after the index, so this part can be discarded)
+    tex_l = flip(tex_l,2);
+    tex_l_alpha = flip(tex_l_alpha,2);
+    l_index = find(mean(tex_l_alpha, 1) == 0,1) - 1;
+    if isempty(l_index) 
+        l_index = size(tex_l_alpha,2);
+    end
+    tex_l = tex_l(:, 1:l_index,:);
+    tex_l_alpha = tex_l_alpha(:, 1:l_index);
+    
     
     % Ceil Texture
-    mat_c = floor([1,1; 1, depth; bg_dim(2), depth; bg_dim(2), 1;]);
+    mat_c = floor([1,depth; 1, 1; bg_dim(2), 1; bg_dim(2), depth;]);
     points_c = [points(7,1:2); points(9,1:2); points(10,1:2); points(8,1:2)];
     tf_c = fitgeotrans(floor(points_c), mat_c, 'projective'); % generate Transform for left texture
     tex_c = imwarp(img_pad, tf_c, 'OutputView', imref2d([floor(depth), bg_dim(2)])); % Dimensions are defined in imref2d
-    tex_c = flip(tex_c, 1); 
     tex_c_alpha = imwarp(alpha, tf_c, 'OutputView', imref2d([floor(depth), bg_dim(2)])); 
+    tex_c = flip(tex_c, 1);
     tex_c_alpha = flip(tex_c_alpha,1);
     
+    c_index = find(mean(tex_c_alpha, 2) == 0,1) - 1;
+    if isempty(c_index) 
+        c_index = size(tex_c_alpha,1);
+    end
+    tex_c = tex_c(1:c_index,:, :);
+    tex_c_alpha = tex_c_alpha(1:c_index,:);
+    
     % Right Texture
-    mat_r = floor([1,1; 1, bg_dim(1); depth, bg_dim(1); depth, 1;]);
+    mat_r = floor([1,bg_dim(1); 1, 1; depth, 1; depth, bg_dim(1);]);
     points_r = [points(2,1:2); points(8,1:2); points(12,1:2); points(6,1:2)];
     tf_r = fitgeotrans(floor(points_r), mat_r, 'projective'); % generate Transform for left texture
     tex_r = imwarp(img_pad, tf_r, 'OutputView', imref2d([bg_dim(1), floor(depth)])); % Dimensions are defined in imref2d
-    tex_r = flip(tex_r, 1);
     tex_r_alpha = imwarp(alpha, tf_r, 'OutputView', imref2d([bg_dim(1), floor(depth)])); % Dimensions are defined in imref2d
-    tex_r_alpha = flip(tex_r_alpha, 1);
-
+    
+    r_index = find(mean(tex_r_alpha, 1) == 0,1) - 1;
+    if isempty(r_index) 
+        r_index = size(tex_r,2);
+    end
+    tex_r = tex_r(:, 1:r_index,:);
+    tex_r_alpha = tex_r_alpha(:, 1:r_index);
+    
+    
     % Floor Texture
-    mat_f = floor([1,1; 1, depth; bg_dim(2), depth; bg_dim(2), 1;]);
+    mat_f = floor([1,depth; 1, 1; bg_dim(2), 1; bg_dim(2), depth;]);
     points_f = [points(3,1:2); points(1,1:2); points(2,1:2); points(4,1:2)];
     tf_f = fitgeotrans(floor(points_f), mat_f, 'projective'); % generate Transform for left texture
     tex_f = imwarp(img_pad, tf_f, 'OutputView', imref2d([floor(depth), bg_dim(2)])); % Dimensions are defined in imref2d
-    tex_f = flip(tex_f, 1);
     tex_f_alpha = imwarp(alpha, tf_f, 'OutputView', imref2d([floor(depth), bg_dim(2)])); % Dimensions are defined in imref2d
-    tex_f_alpha = flip(tex_f_alpha, 1);
-
-
+    
+    % Crop Floor textures
+    f_index = find(mean(tex_f_alpha, 2) == 0,1) - 1;  
+    if isempty(f_index) 
+        f_index = size(tex_f,1);
+    end
+    tex_f = tex_f(1:f_index,:,:);
+    tex_f_alpha = tex_f_alpha(1:f_index,:);
+    
     
     %% Draw in 3D
-    f = figure;
+    fig = figure;
     xlabel('x'); ylabel('y'); zlabel('z');
     axis on; hold on;
     
@@ -208,36 +231,58 @@ function out = tip(img)
     H = bg_dim(1);
     
     %BG
-    m_bg = hgtransform('Matrix', makehgtform('translate', [1,1,H], 'xrotate', -pi/2));
+    xlabel('X');
+    ylabel('Y');
+    zlabel('Z');
+    m_bg = hgtransform('Matrix', makehgtform('translate', [0,0,H-1], 'xrotate', -pi/2));
     image(m_bg, tex_bg);
     %Left
-    m_left = hgtransform('Matrix', makehgtform('translate', [1, -depth, H], 'xrotate', -pi/2, 'yrotate', -pi/2));
+    m_left = hgtransform('Matrix', makehgtform('translate', [1, 1, H-1], 'xrotate', pi/2, 'yrotate', pi/2, 'zrotate',pi));
     im_l = image(m_left, tex_l);
     im_l.AlphaData = tex_l_alpha;
-    
+     
     %Right
     m_right = hgtransform('Matrix', makehgtform('translate', [B,1,H], 'xrotate', -pi/2, 'yrotate', pi/2));
     im_r = image(m_right, tex_r);
     im_r.AlphaData = tex_r_alpha;
-    
+     
     %Floor
     m_floor = hgtransform('Matrix', makehgtform('translate', [1,1,1], 'xrotate', pi, 'yrotate', 0));
     im_f = image(m_floor, tex_f);
     im_f.AlphaData = tex_f_alpha;
     
     %Ceiling
-    m_ceil = hgtransform('Matrix', makehgtform('translate', [1,-depth,H-1], 'xrotate', 0, 'yrotate', 0));
+    m_ceil = hgtransform('Matrix', makehgtform('translate', [0,1,H-2], 'xrotate', pi, 'yrotate', 0, 'zrotate', 0));
     im_c = image(m_ceil, tex_c);
     im_c.AlphaData = tex_c_alpha;
-    
-    max_val = max([B,H, d_l, d_c, d_r, d_f])
-    xlim([0,max_val]); ylim([-max_val, 1]); zlim([0, max_val]);
-    
+ 
+
+    %% Camera Setup
     view(3);
-    tf = cameratoolbar(f);
+    tf = cameratoolbar(fig);
     cameratoolbar('SetMode', 'dollyfb');
     camproj('perspective');
-    camzoom(0.5);
+    
+    vp = [points(13,1) - points(1,1), points(2,2)-points(13,2)];
+    cam_pos = [vp(1), -depth-f, vp(2)];
+    campos(cam_pos);
+    camtarget([vp(1),vp(2),0]);
+    camzoom(0.15);
     axis off;
+    
+    % Calculate offest angle to background plane midpoint
+    midpoint = [bg_dim(2)/2, 0, bg_dim(1)/2];
+    len_vp = depth+f;
+    len_x_rot = norm([depth + f, cam_pos(3) - midpoint(3)]);
+    alpha = acos(len_vp/len_x_rot)/(2*pi)*360;
+    len_y_rot = norm([depth+f, cam_pos(1) - midpoint(1)]);
+    beta = acos(len_vp/len_y_rot)/(2*pi)*360;
+    
+    % Pan Camera to adjust vp offset to center
+    campan(-beta, alpha);
+    
+    % Limit Plot
+    max_val = max([B,H, d_l, d_c, d_r, d_f]);
+    xlim([0,max_val]); ylim([-max_val, 1]); zlim([0, max_val]);
     
 end
