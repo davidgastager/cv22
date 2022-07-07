@@ -304,7 +304,7 @@ image(g_f,f_rect);
 hold on;
 view(3)
 
-
+axis off;
 
 
 
