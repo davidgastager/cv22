@@ -1,4 +1,4 @@
-function fig = tip(img, vp, p7, p2, varargin)
+function fig = tip(img, vp, p7, p2, mask, varargin)
 
     parser = inputParser;
     parser.FunctionName = 'tip';
@@ -18,6 +18,26 @@ function fig = tip(img, vp, p7, p2, varargin)
     use_alpha = parser.Results.useAlpha;
     
     addpath('Helper_Functions')
+    
+    %% Add foreground elements
+    % Calculate bounding box around mask
+    mask_col_means = mean(mask,1);
+    mask_row_means = mean(mask,2);
+    % find min and max
+    m_left = find(mask_col_means, 1);
+    m_right = find(mask_col_means, 1, 'last');
+    m_up = find(mask_row_means,1);
+    m_down = find(mask_row_means,1, 'last');
+    
+    rectangle('Position', [m_left,m_up,m_right-m_left,m_down-m_up], 'EdgeColor', [1,0,0], 'LineWidth', 2);
+    
+    mask_img = img(m_up:m_down, m_left:m_right, :);
+    mask_crop = mask(m_up:m_down, m_left:m_right);
+    %figure, imshow(mask_img), figure, imshow(mask_crop)
+    point_mask = [m_left, m_down];
+    
+    %% Inpaint image
+    img = inpaintExemplar(img,mask);
     %% Calculate Intercept Points
     dim = size(img);
     points = zeros(13,2);
@@ -42,7 +62,7 @@ function fig = tip(img, vp, p7, p2, varargin)
     
     
      %% Extend points to all be on maximum depth rectangle parallel to BG
-    points_long = points;
+     points_long = points;
     
     switch i
         case 1 % left_len is longest
@@ -136,12 +156,12 @@ function fig = tip(img, vp, p7, p2, varargin)
     %points = points_comb;
     points = points_long;
     
-     %% Pad
-     [points_pad, img_pad, dim_pad, alpha] = padPoints(points, img);
-     
-     hold off;
-     close;
-     %plotLines(points_pad, img_pad);
+    %% Pad
+    [points_pad, img_pad, paddings, alpha] = padPoints(points, img);
+    
+    hold off;
+    close;
+    plotLines(points_pad, img_pad);
     
     points = points_pad(:,1:2);
     %% Calculate Depth of shortened walls
@@ -227,6 +247,29 @@ function fig = tip(img, vp, p7, p2, varargin)
     tex_f_alpha = tex_f_alpha(1:f_index,:);
     
     
+    %% Mask
+    % Pad Mask
+    point_mask(1) = point_mask(1) + paddings(1);
+    point_mask(2) = point_mask(2) + paddings(2);
+    
+    % Calculate Depth Value % Y value is 0
+    depth_mask = depth * (point_mask(2)- points(13,2))/(points(3,2)-points(13,2));
+    
+    % Calculate x Value of mask
+    % get left x lim and right x lim
+    mask_m_left = (points(1,2) - points(13,2))/(points(1,1) - points(13,1));
+    b_left = points(1,2) - mask_m_left*points(1,1);
+    
+    mask_x_left = (point_mask(2) - b_left)/mask_m_left;
+    
+    mask_m_right = (points(2,2) - points(13,2))/(points(2,1) - points(13,1));
+    b_right = points(2,2) - mask_m_right*points(2,1);
+    
+    mask_x_right = (point_mask(2) - b_right)/mask_m_right;
+    
+    B_mask = (point_mask(1) - mask_x_left) / (mask_x_right - mask_x_left) * bg_dim(2);
+    
+    
     %% Draw in 3D
     fig = figure;
     xlabel('x'); ylabel('y'); zlabel('z');
@@ -257,15 +300,20 @@ function fig = tip(img, vp, p7, p2, varargin)
     m_ceil = hgtransform('Matrix', makehgtform('translate', [0,1,H-2], 'xrotate', pi, 'yrotate', 0, 'zrotate', 0));
     im_c = image(m_ceil, tex_c);
     
+    % Masked
+    m_mask = hgtransform('Matrix', makehgtform('translate', [B_mask,-depth_mask,1+size(mask_img,1)], 'xrotate', -pi/2));
+    im_m = image(m_mask, mask_img);
+    im_m.AlphaData = mask_crop;
+    
+    
     % Set Alpha Data
     if use_alpha
         im_l.AlphaData = tex_l_alpha;
         im_r.AlphaData = tex_r_alpha;
         im_f.AlphaData = tex_f_alpha;
         im_c.AlphaData = tex_c_alpha;
-    end
- 
-
+    end   
+    
     %% Camera Setup
     view(3);
     tf = cameratoolbar(fig);

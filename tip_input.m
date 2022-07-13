@@ -28,11 +28,23 @@ function fig = tip_input(img)
     vp = floor([vp1, vp2]);
     
     
+    outline = drawassisted();   
+    
+    mask = createMask(outline);
+    
+    %img_inpaint = inpaintExemplar(img,mask);
+    
+    %fullDestinationFileName = fullfile(pathname, "temp.png")
+    %imwrite(j, fullDestinationFileName)
+    
+    
     % TIP FUNCTIONS
-    fig = tip(img, vp, p7, p2, 'useAlpha', true); % David
+    fig = tip(img, vp, p7, p2, mask, 'useAlpha', false); % David
     set(gcf, 'Name', 'TIP');
-    fig2 = box3d(img, vp, p7, p2); % Yan, Shi
-    set(gcf, 'Name', 'Box3D');
+    
+    
+    %fig2 = box3d(img, vp, p7, p2); % Yan, Shi
+    %set(gcf, 'Name', 'Box3D');
     
 end
 

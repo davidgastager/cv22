@@ -17,7 +17,7 @@ function plotLines(points ,img)
         text(points(i,1)+ 30 , points(i,2), sprintf('P%i',i), 'Color', [1,1,1]);
     end
     
-    if (size(points,1)>2)
+    if (size(points,2)>2)
         points_plot = points(:,1:2);
         scatter(points(1:end-1,3),points(1:end-1,4), 20, [1,1,1]);
     else
