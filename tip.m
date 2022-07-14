@@ -1,4 +1,4 @@
-function fig = tip(img, vp, p7, p2, mask, varargin)
+function fig = tip(img, vp, p7, p2, varargin)
 
     parser = inputParser;
     parser.FunctionName = 'tip';
@@ -8,6 +8,8 @@ function fig = tip(img, vp, p7, p2, mask, varargin)
     parser.addRequired('p7', @isnumeric);
     parser.addRequired('p2', @isnumeric);
     parser.addParameter('useAlpha', false);
+    parser.addParameter('fgMask', false);
+    parser.addParameter('f', 400);
 
     parser.parse(img, vp, p7, p2, varargin{:});
     
@@ -16,28 +18,38 @@ function fig = tip(img, vp, p7, p2, mask, varargin)
     p7 = parser.Results.p7;
     p2 = parser.Results.p2;
     use_alpha = parser.Results.useAlpha;
-    
+    mask = parser.Results.fgMask;
+    f = parser.Results.f;
     addpath('Helper_Functions')
     
+    
     %% Add foreground elements
-    % Calculate bounding box around mask
-    mask_col_means = mean(mask,1);
-    mask_row_means = mean(mask,2);
-    % find min and max
-    m_left = find(mask_col_means, 1);
-    m_right = find(mask_col_means, 1, 'last');
-    m_up = find(mask_row_means,1);
-    m_down = find(mask_row_means,1, 'last');
-    
-    rectangle('Position', [m_left,m_up,m_right-m_left,m_down-m_up], 'EdgeColor', [1,0,0], 'LineWidth', 2);
-    
-    mask_img = img(m_up:m_down, m_left:m_right, :);
-    mask_crop = mask(m_up:m_down, m_left:m_right);
-    %figure, imshow(mask_img), figure, imshow(mask_crop)
-    point_mask = [m_left, m_down];
-    
-    %% Inpaint image
-    img = inpaintExemplar(img,mask);
+    if size(mask,1) > 1
+        % Calculate bounding box around mask
+        mask_col_means = mean(mask,1);
+        mask_row_means = mean(mask,2);
+        % find min and max
+        m_left = find(mask_col_means, 1);
+        m_right = find(mask_col_means, 1, 'last');
+        m_up = find(mask_row_means,1);
+        m_down = find(mask_row_means,1, 'last');
+
+        rectangle('Position', [m_left,m_up,m_right-m_left,m_down-m_up], 'EdgeColor', [1,0,0], 'LineWidth', 2);
+
+        mask_img = img(m_up:m_down, m_left:m_right, :);
+        mask_crop = mask(m_up:m_down, m_left:m_right);
+        %figure, imshow(mask_img), figure, imshow(mask_crop)
+        point_mask = [m_left, m_down];
+
+        if m_down < p2(2)
+            error('Object to be removed has to be connected to ground plane');
+            mask = false
+        else
+            %% Inpaint image
+            img = inpaintExemplar(img,mask);
+        end
+    end
+
     %% Calculate Intercept Points
     dim = size(img);
     points = zeros(13,2);
@@ -165,7 +177,7 @@ function fig = tip(img, vp, p7, p2, mask, varargin)
     
     points = points_pad(:,1:2);
     %% Calculate Depth of shortened walls
-    focal_length = 2000;
+    focal_length = f;
     depth = calcDepth(points(13,:), points(1,:), points(3,:),focal_length);
    
     
@@ -248,27 +260,26 @@ function fig = tip(img, vp, p7, p2, mask, varargin)
     
     
     %% Mask
-    % Pad Mask
-    point_mask(1) = point_mask(1) + paddings(1);
-    point_mask(2) = point_mask(2) + paddings(2);
-    
-    % Calculate Depth Value % Y value is 0
-    depth_mask = depth * (point_mask(2)- points(13,2))/(points(3,2)-points(13,2));
-    
-    % Calculate x Value of mask
-    % get left x lim and right x lim
-    mask_m_left = (points(1,2) - points(13,2))/(points(1,1) - points(13,1));
-    b_left = points(1,2) - mask_m_left*points(1,1);
-    
-    mask_x_left = (point_mask(2) - b_left)/mask_m_left;
-    
-    mask_m_right = (points(2,2) - points(13,2))/(points(2,1) - points(13,1));
-    b_right = points(2,2) - mask_m_right*points(2,1);
-    
-    mask_x_right = (point_mask(2) - b_right)/mask_m_right;
-    
-    B_mask = (point_mask(1) - mask_x_left) / (mask_x_right - mask_x_left) * bg_dim(2);
-    
+    if size(mask,1) > 1
+        % Pad Mask
+        point_mask(1) = point_mask(1) + paddings(1);
+        point_mask(2) = point_mask(2) + paddings(2);
+
+        % Calculate Depth Value % Y value is 0
+        depth_mask = depth * (point_mask(2)- points(13,2))/(points(3,2)-points(13,2));
+
+        % Calculate interpolatedd x Value of mask
+        % get left x lim and right x lim (x values of left and right walls on the same line as the point)
+        mask_m_left = (points(1,2) - points(13,2))/(points(1,1) - points(13,1));
+        b_left = points(1,2) - mask_m_left*points(1,1);
+        mask_x_left = (point_mask(2) - b_left)/mask_m_left;
+
+        mask_m_right = (points(2,2) - points(13,2))/(points(2,1) - points(13,1));
+        b_right = points(2,2) - mask_m_right*points(2,1);
+        mask_x_right = (point_mask(2) - b_right)/mask_m_right;
+        
+        B_mask = (point_mask(1) - mask_x_left) / (mask_x_right - mask_x_left) * bg_dim(2);
+    end
     
     %% Draw in 3D
     fig = figure;
@@ -301,10 +312,16 @@ function fig = tip(img, vp, p7, p2, mask, varargin)
     im_c = image(m_ceil, tex_c);
     
     % Masked
-    m_mask = hgtransform('Matrix', makehgtform('translate', [B_mask,-depth_mask,1+size(mask_img,1)], 'xrotate', -pi/2));
-    im_m = image(m_mask, mask_img);
-    im_m.AlphaData = mask_crop;
-    
+    if size(mask,1) > 1
+        % Calculate
+        %ratio = sqrt((bg_dim(1)*bg_dim(2)) / (dim(1)*dim(2)));
+        ratio = bg_dim(1)/dim(1);
+        mask_img = imresize(mask_img, ratio);
+        mask_crop = imresize(mask_crop, ratio);
+        m_mask = hgtransform('Matrix', makehgtform('translate', [B_mask,-depth_mask,1+size(mask_img,1)], 'xrotate', -pi/2));
+        im_m = image(m_mask, mask_img);
+        im_m.AlphaData = mask_crop;
+    end
     
     % Set Alpha Data
     if use_alpha
@@ -338,8 +355,8 @@ function fig = tip(img, vp, p7, p2, mask, varargin)
     % Pan Camera to adjust vp offset to center
     campan(-beta, alpha);
     
-    % Limit Plot
-    %max_val = max([B,H, depth]);
-    %xlim([0,max_val]); ylim([-max_val, 1]); zlim([0, max_val]);
+    % Set display ratios of axis to be equal (Non distorted view)
+    pbaspect([1 1 1]);
+    daspect([1 1 1]);
     
 end

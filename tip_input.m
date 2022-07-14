@@ -5,9 +5,9 @@ function fig = tip_input(img)
     n_px = size(img,1) * size(img,2);
     n_px_fhd = 1920*1080;
     if n_px > n_px_fhd
-        ratio = sqrt(n_px_fhd / n_px)
+        ratio = sqrt(n_px_fhd / n_px);
         img = imresize(img, ratio);
-        size(img), size(img,1)*size(img,2)
+        %size(img), size(img,1)*size(img,2)
     end
     
     dim = size(img);
@@ -39,7 +39,8 @@ function fig = tip_input(img)
     
     
     % TIP FUNCTIONS
-    fig = tip(img, vp, p7, p2, mask, 'useAlpha', false); % David
+    %fig = tip(img, vp, p7, p2, 'useAlpha', false);
+    fig = tip(img, vp, p7, p2, 'useAlpha', false, 'fgMask', mask, 'f', 400); % David
     set(gcf, 'Name', 'TIP');
     
     
