@@ -9,3 +9,6 @@ Repository for the Tour Into the Picture (TIP) project of the Computer Vision Cl
 
 
 ## Running the Application:
+### Setup
+1. Add the folder __**Helper_functions**__ to your matlab path <br>
+2. Run __**TIPP_APP.mlapp**__
