@@ -365,28 +365,33 @@ function fig = tip(img, vp, p7, p2, varargin)
     axis off;
     
     % Orbit button
-    orbitbutton=uicontrol(f,'style','Pushbutton','String','Orbit','Position',[20 20 70 30],'Callback',@orbit_callback)
+    orbitbutton=uicontrol(f,'style','Pushbutton','String','Orbit','Position',[10 20 70 30],'Callback',@orbit_callback)
     function orbit_callback(~,~)
         cameratoolbar('SetMode','orbit')
     end
     % Pan button
-    panbutton=uicontrol(f,'style','Pushbutton','String','Pan','Position',[100 20 70 30],'Callback',@pan_callback);
+    panbutton=uicontrol(f,'style','Pushbutton','String','Pan','Position',[85 20 70 30],'Callback',@pan_callback);
     function pan_callback(~,~)
         cameratoolbar('SetMode','pan')
     end
     % Forward/Back button
-    dollyfbbutton=uicontrol(f,'style','Pushbutton','String','Forward/Back','Position',[180 20 90 30],'Callback',@dollyfb_callback);
+    dollyfbbutton=uicontrol(f,'style','Pushbutton','String','Forward/Back','Position',[160 20 70 30],'Callback',@dollyfb_callback);
     function dollyfb_callback(~,~)
         cameratoolbar('SetMode','dollyfb')
     end
     % Zoom button
-    zoom=uicontrol(f,'style','Pushbutton','String','Zoom','Position',[280 20 70 30],'Callback',@zoom_callback);
+    zoom=uicontrol(f,'style','Pushbutton','String','Zoom','Position',[235 20 70 30],'Callback',@zoom_callback);
     function zoom_callback(~,~)
         cameratoolbar('SetMode','zoom')
     end
     % Perspective projection botton
-    perspective=uicontrol(f,'style','Pushbutton','String','Perspective projection','Position',[360 20 170 30],'Callback',@perspective_callback);
+    perspective=uicontrol(f,'style','Pushbutton','String','Perspective projection','Position',[310 20 120 30],'Callback',@perspective_callback);
     function perspective_callback(~,~)
         camproj('perspective')
+    end
+    % Orthographic projection botton
+    orthographic=uicontrol(f,'style','Pushbutton','String','Orthographic projection','Position',[435 20 120 30],'Callback',@orthographic_callback);
+    function orthographic_callback(~,~)
+        camproj('orthographic')
     end
 end
