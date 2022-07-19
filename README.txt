@@ -12,9 +12,16 @@ an outer rectangle which corresponds to the outer frame of the input image. We b
 
 
 ## Running the Application:
+### Used Toolboxes:
+Image Processing Toolbox
+AppDesigner
+
+This app was written in Matlab R2020b.
+
 ### Setup
 1. Add the folder __**Helper_functions**__ to your matlab path
 2. Run __**main.m**__ or __**TIPP_APP.mlapp**__ in Matlab, or start the app directly from your file explorer with a double click.
+
 
 ## Using the Application:
 1) Select the desired image for the "tour" with the help of the "Select Image" button.
@@ -25,7 +32,10 @@ an outer rectangle which corresponds to the outer frame of the input image. We b
 to outline the object. Note that the object to be cropped out has to be connected to the ground in the image.
 6) The Use Alpha checkbox can be checked in order to create a masked version of the plot. If alpha is not used, the final 3D plot might have some black borders. Note that using Alpha slows down the plotting process.
 7) Set the Depth of the generated image using the Depth slider.
-7) Lastly, generate the 3D image with the button "Tour into the Picture!" and tour around the 3D image with the provided camera functions.
+8) Lastly, generate the 3D image with the button "Tour into the Picture!" and tour around the 3D image with the provided camera functions.
+
+## Important Notes:
+Images can have a maximum of four megapixels. If an image exceeds this, it is automatically scaled down.
 
 ## Group Members:
 Shi Bu, David Gastager, Milica Kalanj, LihQi Tan, Yan Wang
