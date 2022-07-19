@@ -25,6 +25,7 @@ function fig = tip(img, vp, p7, p2, varargin)
     
     %% Add foreground elements
     if size(mask,1) > 1
+        size(mask)
         % Calculate bounding box around mask
         mask_col_means = mean(mask,1);
         mask_row_means = mean(mask,2);
@@ -337,7 +338,6 @@ function fig = tip(img, vp, p7, p2, varargin)
     %% Camera Setup
     view(3);
      tf = cameratoolbar(fig);
-     %cameratoolbar('SetMode', 'dollyfb');
      camproj('perspective');
      
      vp = [points(13,1) - points(1,1), points(2,2)-points(13,2)];
