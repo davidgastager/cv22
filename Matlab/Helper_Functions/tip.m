@@ -336,30 +336,57 @@ function fig = tip(img, vp, p7, p2, varargin)
     
     %% Camera Setup
     view(3);
-    tf = cameratoolbar(fig);
-    cameratoolbar('SetMode', 'dollyfb');
-    camproj('perspective');
-    
-    vp = [points(13,1) - points(1,1), points(2,2)-points(13,2)];
-    cam_pos = [vp(1), -depth-focal_length, vp(2)];
-    campos(cam_pos);
-    camtarget([vp(1),vp(2),0]);
-    camzoom(0.15);
-    axis off;
-    
-    % Calculate offest angle to background plane midpoint
-    midpoint = [bg_dim(2)/2, 0, bg_dim(1)/2];
-    len_vp = depth+focal_length;
-    len_x_rot = norm([depth + focal_length, cam_pos(3) - midpoint(3)]);
-    alpha = acos(len_vp/len_x_rot)/(2*pi)*360;
-    len_y_rot = norm([depth+focal_length, cam_pos(1) - midpoint(1)]);
-    beta = acos(len_vp/len_y_rot)/(2*pi)*360;
-    
-    % Pan Camera to adjust vp offset to center
+     tf = cameratoolbar(fig);
+     cameratoolbar('SetMode', 'dollyfb');
+     camproj('perspective');
+     
+     vp = [points(13,1) - points(1,1), points(2,2)-points(13,2)];
+     cam_pos = [vp(1), -depth-focal_length, vp(2)];
+     campos(cam_pos);
+     camtarget([vp(1),vp(2),0]);
+     camzoom(0.15);
+     axis off;
+     
+%   Calculate offest angle to background plane midpoint
+     midpoint = [bg_dim(2)/2, 0, bg_dim(1)/2];
+     len_vp = depth+focal_length;
+     len_x_rot = norm([depth + focal_length, cam_pos(3) - midpoint(3)]);
+     alpha = acos(len_vp/len_x_rot)/(2*pi)*360;
+     len_y_rot = norm([depth+focal_length, cam_pos(1) - midpoint(1)]);
+     beta = acos(len_vp/len_y_rot)/(2*pi)*360;
+     
+%  Pan Camera to adjust vp offset to center
     campan(-beta, alpha);
     
     % Set display ratios of axis to be equal (Non distorted view)
     pbaspect([1 1 1]);
     daspect([1 1 1]);
+    f=gcf;
+    axis off;
     
+    % Orbit button
+    orbitbutton=uicontrol(f,'style','Pushbutton','String','Orbit','Position',[20 20 70 30],'Callback',@orbit_callback)
+    function orbit_callback(~,~)
+        cameratoolbar('SetMode','orbit')
+    end
+    % Pan button
+    panbutton=uicontrol(f,'style','Pushbutton','String','Pan','Position',[100 20 70 30],'Callback',@pan_callback);
+    function pan_callback(~,~)
+        cameratoolbar('SetMode','pan')
+    end
+    % Forward/Back button
+    dollyfbbutton=uicontrol(f,'style','Pushbutton','String','Forward/Back','Position',[180 20 90 30],'Callback',@dollyfb_callback);
+    function dollyfb_callback(~,~)
+        cameratoolbar('SetMode','dollyfb')
+    end
+    % Zoom button
+    zoom=uicontrol(f,'style','Pushbutton','String','Zoom','Position',[280 20 70 30],'Callback',@zoom_callback);
+    function zoom_callback(~,~)
+        cameratoolbar('SetMode','zoom')
+    end
+    % Perspective projection botton
+    perspective=uicontrol(f,'style','Pushbutton','String','Perspective projection','Position',[360 20 170 30],'Callback',@perspective_callback);
+    function perspective_callback(~,~)
+        camproj('perspective')
+    end
 end
