@@ -38,4 +38,4 @@ to outline the object. Note that the object to be cropped out has to be connecte
 Images can have a maximum of four megapixels. If an image exceeds this, it is automatically scaled down.
 
 ## Group Members:
-Shi Bu, David Gastager, Milica Kalanj, LihQi Tan, Yan Wang
+David Gastager, Shi Bu, Milica Kalanj, LihQi Tan, Yan Wang
